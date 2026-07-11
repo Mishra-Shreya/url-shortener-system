@@ -1,11 +1,13 @@
 package com.urlshortener.backend.utility;
 
 import com.urlshortener.backend.utility.service.SequenceService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
 import java.time.LocalDateTime;
 
+@Slf4j
 @Service
 public class ShortCodeGenerator implements IShortCodeGenerator {
 
@@ -24,12 +26,13 @@ public class ShortCodeGenerator implements IShortCodeGenerator {
         while(id.compareTo(BigInteger.ZERO) > 0){
 
             BigInteger[] dnr = id.divideAndRemainder(BASE);
-            System.out.println("dnr = " + dnr[0] + " , " + dnr[1]);
+            log.debug("divideAndRemainder[]: d={}, r={}", dnr[0], dnr[1]);
             sb.append(CHARS[dnr[1].intValue()]);
-            System.out.println("sb = " + sb);
+            log.debug("sb={}", sb);
             id = dnr[0];
         }
-        System.out.println("finall sb = " + sb);
+
+        log.info("short code={}", sb);
         return new String(sb);
     }
 
@@ -38,18 +41,18 @@ public class ShortCodeGenerator implements IShortCodeGenerator {
 
         int day = now.getDayOfYear();
         String dayf = String.format("%03d", day);
-        System.out.println("dayf=" + dayf);
+        log.debug("dayf={}", dayf);
         int year = now.getYear();
         String yearf = String.format("%04d", year);
-        System.out.println("yearf=" + yearf);
+        log.debug("yearf={}", yearf);
         String serverId = System.getProperty("server.id");
         String serverIdf = String.format("%03d", Integer.parseInt(serverId));
-        System.out.println("serverIdf=" + serverIdf);
+        log.debug("serverIdf={}", serverIdf);
         long seq = seqService.getNextSeq();
         String seqf = String.format("%09d", seq);
-        System.out.println("seqf=" + seqf);
+        log.debug("seqf={}", seqf);
         String sid =  yearf + dayf +serverIdf + seqf;
-        System.out.println("sid=" + sid);
+        log.info("sid={}", sid);
         return new BigInteger(sid);
     }
 }

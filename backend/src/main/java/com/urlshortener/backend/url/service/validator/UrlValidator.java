@@ -8,6 +8,7 @@ import com.urlshortener.backend.url.entity.CustomUrl;
 import com.urlshortener.backend.url.entity.Url;
 import com.urlshortener.backend.url.repository.CustomUrlRepository;
 import com.urlshortener.backend.url.repository.UrlRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class UrlValidator implements IUrlValidator {
 
@@ -41,7 +43,7 @@ public class UrlValidator implements IUrlValidator {
             validateCustomCodeExists(customCode);
         }
 
-        System.out.println("valid urlrequestdto");
+        log.info("Valid urlrequestdto");
         return true;
     }
 
@@ -60,7 +62,7 @@ public class UrlValidator implements IUrlValidator {
         if(urlRequestDto.getStatus() != null)
             validateStatus(urlRequestDto.getStatus());
 
-        System.out.println("valid urlrequestdto");
+        log.info("Valid updateurlrequestdto");
         return true;
     }
 
@@ -71,21 +73,23 @@ public class UrlValidator implements IUrlValidator {
             URI uri = new URI(originalUrl);
 
             if(uri.getScheme()==null || uri.getHost()==null){
+                log.warn("Invalid url={}", originalUrl);
                 throw new UrlShortnerException(ResponseCode.INVALID_URL, HttpStatus.BAD_REQUEST);
             }
 
             String scheme = uri.getScheme().toLowerCase();
-            System.out.println("scheme=" + scheme);
+            log.info("scheme={}", scheme);
             if(!scheme.equals("http") && !scheme.equals("https")){
+                log.warn("Invalid url={}", originalUrl);
                 throw new UrlShortnerException(ResponseCode.INVALID_URL, HttpStatus.BAD_REQUEST);
             }
 
         } catch (URISyntaxException e) {
-            e.printStackTrace();
+            log.warn("Invalid url={}", originalUrl);
             throw new UrlShortnerException(ResponseCode.INVALID_URL, HttpStatus.BAD_REQUEST);
         }
 
-        System.out.println("valid original url");
+        log.info("Valid url={}", originalUrl);
         return true;
     }
 
@@ -94,7 +98,7 @@ public class UrlValidator implements IUrlValidator {
 
         List<String> invalid = List.of("#", "$", "?", "=");
         if(invalid.stream().anyMatch(customShortCode::contains)){
-            System.out.println("invalid short code");
+            log.warn("Invalid short code={}", customShortCode);
             throw new UrlShortnerException(ResponseCode.INVALID_SHORTCODE, HttpStatus.BAD_REQUEST);
         }
 
@@ -106,6 +110,7 @@ public class UrlValidator implements IUrlValidator {
 
         Optional<Url> urls = urlRepository.findActiveUrlByCustomCode(customShortCode);
         if(urls.isPresent()){
+            log.warn("Custom alias already exists: customCode={}", customShortCode);
             throw new UrlShortnerException(ResponseCode.CUSTOM_ALIAS_ALREADY_EXISTS, HttpStatus.CONFLICT);
         }
         return false;
@@ -116,6 +121,7 @@ public class UrlValidator implements IUrlValidator {
         if(status.equals("A") || status.equals("D"))
             return true;
 
+        log.warn("Invalid status={}", status);
         throw new UrlShortnerException(ResponseCode.INVALID_STATUS, HttpStatus.BAD_REQUEST);
     }
 
@@ -131,6 +137,7 @@ public class UrlValidator implements IUrlValidator {
             String customCode = customUrl.get().getCustomCode();
             Optional<Url> urls = urlRepository.findActiveUrlByCustomCode(customCode);
             if(urls.isPresent()){
+                log.warn("Status change not possible: old status={}, new status={}", url.get().getStatus(), newStatus);
                 throw new UrlShortnerException(ResponseCode.STATUS_CHANGE_NOT_POSSIBLE, HttpStatus.CONFLICT);
             }
         }
@@ -144,6 +151,7 @@ public class UrlValidator implements IUrlValidator {
         if(id.trim().length() == 19 && isBigInteger(id)) {
             return true;
         }
+        log.warn("Invalid id={}", id);
         throw new UrlShortnerException(ResponseCode.INVALID_ID, HttpStatus.BAD_REQUEST);
     }
 

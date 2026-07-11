@@ -12,6 +12,7 @@ import com.urlshortener.backend.url.repository.UrlRepository;
 import com.urlshortener.backend.url.response.DtoService;
 import com.urlshortener.backend.url.service.validator.IUrlValidator;
 import com.urlshortener.backend.utility.IShortCodeGenerator;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class UrlService {
 
@@ -79,17 +81,19 @@ public class UrlService {
             customUrl.setUpdatedAt(now);
             customUrlRepository.save(customUrl);
         }
-
+        log.info("Short URL created: id={}, shortCode={}, customCode={}", id, shortCode, urlRequestDto.getCustomCode());
         UrlResponseDto resp = dtoService.populateResponseDto(url);
         return resp;
     }
 
     public List<UrlResponseDto> fetchByUser(String userId){
         List<Url> urlList = urlRepository.findByUserId(userId);
-        System.out.println("urlList"+urlList);
-        if(urlList.isEmpty())
-            throw new UrlShortnerException(ResponseCode.URL_NOT_FOUND, HttpStatus.NOT_FOUND);
 
+        if(urlList.isEmpty()) {
+            log.warn("URL not found for userid={}", userId);
+            throw new UrlShortnerException(ResponseCode.URL_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+        log.info("Fetched {} URLs for userId={}", urlList.size(), userId);
         return urlList.stream().map(url -> dtoService.populateResponseDto(url)).toList();
     }
 
@@ -97,10 +101,12 @@ public class UrlService {
     public List<UrlResponseDto> fetchByCustomCode(String customShortCode){
 
         List<Url> urlList = urlRepository.findUrlByCustomCode(customShortCode);
-        System.out.println("urlList"+urlList);
-        if(urlList.isEmpty())
-            throw new UrlShortnerException(ResponseCode.SHORTCODE_NOT_FOUND, HttpStatus.NOT_FOUND);
 
+        if(urlList.isEmpty()) {
+            log.warn("URL not found for customCode={}", customShortCode);
+            throw new UrlShortnerException(ResponseCode.SHORTCODE_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+        log.info("Fetched {} URLs for customCode={}", urlList.size(), customShortCode);
         return urlList.stream().map(url -> dtoService.populateResponseDto(url)).toList();
     }
 
@@ -110,6 +116,7 @@ public class UrlService {
         BigInteger bid = new BigInteger(id);
         Optional<Url> url = urlRepository.findById(bid);
         if(url.isEmpty()){
+            log.warn("Id not found: id={}", id);
             throw new UrlShortnerException(ResponseCode.ID_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
         return dtoService.populateResponseDto(url.get());
@@ -126,13 +133,18 @@ public class UrlService {
         BigInteger bid = new BigInteger(id);
         Optional<Url> url = urlRepository.findById(bid);
         if(url.isEmpty()){
+            log.warn("Id not found: id={}", id);
             throw new UrlShortnerException(ResponseCode.ID_NOT_FOUND, HttpStatus.NOT_FOUND);
-        } else if(url.get().getStatus().equals("D")){
+        }
+        log.info("Before: status={}", url.get().getStatus());
+        if(url.get().getStatus().equals("D")){
+            log.warn("Short url already deactivated: status={}", url.get().getStatus());
             return List.of(ResponseCode.SHORTURL_ALREADY_DEACTIVATED, dtoService.populateResponseDto(url.get()));
         }
         IUrlValidator.validateStatusChangePossible("D", bid);
         //update status
         url.get().setStatus("D");
+        log.info("Short url deactivated: status={}", url.get().getStatus());
         return List.of(ResponseCode.SHORTURL_DEACTIVATED, dtoService.populateResponseDto(url.get()));
     }
 
@@ -144,12 +156,18 @@ public class UrlService {
         BigInteger bid = new BigInteger(id);
         Optional<Url> url = urlRepository.findById(bid);
         if(url.isEmpty()){
+            log.warn("Id not found: id={}", id);
             throw new UrlShortnerException(ResponseCode.SHORTCODE_NOT_FOUND, HttpStatus.NOT_FOUND);
-        } else if(url.get().getStatus().equals("A")){
+        }
+        log.info("Before: status={}", url.get().getStatus());
+        if(url.get().getStatus().equals("A")){
+            log.warn("Short url deactivated: status={}", url.get().getStatus());
             return List.of(ResponseCode.SHORTURL_ALREADY_ACTIVE, dtoService.populateResponseDto(url.get()));
         }
         IUrlValidator.validateStatusChangePossible("A", bid);
+        //update status
         url.get().setStatus("A");
+        log.info("Short url activated: status={}", url.get().getStatus());
         return List.of(ResponseCode.SHORTURL_ACTIVATED, dtoService.populateResponseDto(url.get()));
     }
 
@@ -172,6 +190,7 @@ public class UrlService {
 
         Optional<Url> optionalUrl = urlRepository.findById(id);
         if(optionalUrl.isEmpty()) {
+            log.warn("Id not found: id={}", id);
             throw new UrlShortnerException(ResponseCode.ID_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
 
@@ -203,6 +222,7 @@ public class UrlService {
 
         url.setUpdatedAt(now);
 
+        log.info("Short URL updated: id={}", id);
         UrlResponseDto resp = dtoService.populateResponseDto(url);
         return resp;
     }

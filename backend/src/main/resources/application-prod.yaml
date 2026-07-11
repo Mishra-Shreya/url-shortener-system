@@ -15,3 +15,8 @@ spring:
 
 app:
   server-id: ${SERVER_ID:1}
+
+logging:
+  level:
+    root: INFO
+    com.urlshortener.backend: INFO

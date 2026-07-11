@@ -29,7 +29,6 @@ public class UrlController {
     @GetMapping("/url")
     public ResponseEntity<?> fetchAll(@RequestParam String userId){
         List<UrlResponseDto> urlList = urlService.fetchByUser(userId);
-        System.out.println("controller urlList"+urlList);
 
         String baseUrl = ServletUriComponentsBuilder
                             .fromCurrentContextPath()
@@ -60,7 +59,6 @@ public class UrlController {
     public ResponseEntity<?> fetchByCustomCode(@PathVariable String customCode){
 
         List<UrlResponseDto> urlList = urlService.fetchByCustomCode(customCode);
-        System.out.println("controller urlList"+urlList);
 
         String baseUrl = ServletUriComponentsBuilder
                 .fromCurrentContextPath()

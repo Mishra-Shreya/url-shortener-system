@@ -10,3 +10,7 @@ spring:
           default_schema: uss
       show-sql: true
 
+logging:
+  level:
+    root: INFO
+    com.urlshortener.backend: DEBUG
