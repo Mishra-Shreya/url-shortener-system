@@ -12,7 +12,7 @@ public class SequenceService {
     private EntityManager entityManager;
 
     public Long getNextSeq(){
-        String query = "SELECT nextval('id_sequence')";
+        String query = "SELECT nextval('uss.id_sequence')";
 
         Query nativeQuery = entityManager.createNativeQuery(query);
         return (Long) nativeQuery.getSingleResult();
