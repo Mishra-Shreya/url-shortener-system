@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: url-shortener
+
+  jpa:
+      hibernate:
+        ddl-auto: update
+      properties:
+        hibernate:
+          default_schema: uss
+      show-sql: true
+
