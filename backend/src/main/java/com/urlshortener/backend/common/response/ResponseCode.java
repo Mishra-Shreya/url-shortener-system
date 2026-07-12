@@ -3,6 +3,7 @@ package com.urlshortener.backend.common.response;
 public enum ResponseCode {
 
     SUCCESS("SUCCESS", "Success", ResponseType.INFO),
+    //url response codes
     RECORDS_FETCHED("RECORDS_FETCHED", "Records fetched successfully", ResponseType.INFO),
     URL_CREATED("URL_CREATED", "Short URL created successfully", ResponseType.INFO),
     CUSTOM_ALIAS_ALREADY_EXISTS("CUSTOM_ALIAS_ALREADY_EXISTS", "Custom alias already exists", ResponseType.ERROR),
@@ -23,7 +24,17 @@ public enum ResponseCode {
     SHORTURL_ALREADY_ACTIVE("SHORTURL_ALREADY_ACTIVE"," Short URL already active", ResponseType.INFO),
     URL_UPDATED("URL_UPDATED", "URL updated successfully", ResponseType.INFO),
     STATUS_CHANGE_NOT_POSSIBLE("STATUS_CHANGE_NOT_POSSIBLE", "Status change not possible", ResponseType.ERROR),
-    URL_DELETED("URL_DELETED", "URL deleted successfully", ResponseType.INFO)
+    URL_DELETED("URL_DELETED", "URL deleted successfully", ResponseType.INFO),
+
+    //user response codes
+    USER_CREATED("USER_CREATED", "User registration successful", ResponseType.INFO),
+    USERID_ALREADY_EXISTS("USERID_ALREADY_EXISTS","UserId already exists", ResponseType.INFO),
+    EMAIL_ALREADY_EXISTS("EMAIL_ALREADY_EXISTS","Email already exists", ResponseType.INFO),
+    INVALID_EMAIL("INVALID_EMAIL","Invalid Email format", ResponseType.ERROR),
+    INVALID_USERID("INVALID_USERID","Invalid User Id format", ResponseType.ERROR),
+    INVALID_PASSWORD("INVALID_PASSWORD","Invalid Password format", ResponseType.ERROR),
+    LOGIN_SUCCESS("LOGIN_SUCCESS", "Login Successful", ResponseType.INFO),
+    LOGOUT_SUCCESS("LOGOUT_SUCCESS", "Logout Successful", ResponseType.INFO)
     ;
 
     private final String code;

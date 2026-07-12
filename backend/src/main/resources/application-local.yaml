@@ -7,3 +7,7 @@ spring:
 
 app:
   server-id: 1
+
+jwt:
+  secret: we*B$$!&B@|?:"{_=c=w74fb2n19f~6chapvt2,cq;r3i4jqinoms$%J@&@*J!INY%&D%Vh8hh37dg6gw([]9
+  expiration-ms: 3600000
