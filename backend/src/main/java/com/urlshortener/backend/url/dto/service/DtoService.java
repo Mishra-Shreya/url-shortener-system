@@ -1,4 +1,4 @@
-package com.urlshortener.backend.url.response;
+package com.urlshortener.backend.url.dto.service;
 
 import com.urlshortener.backend.url.dto.response.UrlResponseDto;
 import com.urlshortener.backend.url.entity.CustomUrl;

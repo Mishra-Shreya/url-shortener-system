@@ -4,33 +4,41 @@ src/main/java/com/urlshortener/backend
 |
 |-- common
 |   |-- exception
-|   |   |-- GlobalExceptionHandler.java
-|   |   |-- UrlShortenerException.java
+|   |   |-- GlobalExceptionHandler.java //spring exception handling 
+|   |   |-- UrlShortenerException.java //spring exception handling
 |   |
 |   |-- response
 |   |   |-- ApiResponse.java
-|   |   |-- ApiResponseBuilder.java
-|   |   |-- ResponseCode.java
-|   |   |-- ResponseType.java
+|   |   |-- ApiResponseBuilder.java //builder pattern
+|   |   |-- ResponseCode.java //enum
+|   |   |-- ResponseType.java //enum
 |
 |-- url
 |   |-- controller
 |   |   |-- UrlController.java
 |   |
 |   |-- service
+|   |   |-- validator
+|   |   |   |-- UrlValidator.java
+|   |   |   |-- IUrlValidator.java
+|   |   |
 |   |   |-- UrlService.java
 |   |
-|   |-- repository
+|   |-- repository //spring data jpa //repository design pattern
 |   |   |-- UrlRepository.java
 |   |   |-- CustomUrlRepository.java
 |   |
-|   |-- entity
+|   |-- entity //spring data jpa
 |   |   |-- Url.java
 |   |   |-- CustomUrl.java
+|   |   |-- UrlStatus.java //enum //future
 |   |
 |   |-- dto
+|   |   |-- service
+|   |   |   |-- DtoService.java
+|   |   |
 |   |   |-- request
-|   |   |   |-- UrlRequestDto.java
+|   |   |   |-- UrlRequestDto.java //spring validation
 |   |   |   |-- UpdateUrlRequest.java
 |   |   |
 |   |   |-- response
@@ -41,19 +49,16 @@ src/main/java/com/urlshortener/backend
 |   |   |-- RedirectController.java
 |   |
 |   |-- service
-|       |-- RedirectService.java
+|   |   |-- RedirectService.java
 |
-|-- shortcode
+|-- utility
 |   |-- service
 |   |   |-- SequenceService.java
 |   |
+|   |-- IShortCodeGenerator.java
 |   |-- ShortCodeGenerator.java
-|   |-- ShortCodeGenerationStrategy.java
-|   |-- Base62ShortCodeGenerator.java
-|
-|-- config
-|   |-- AppProperties.java
-|   |-- WebConfig.java
+|   |-- ShortCodeGenerationStrategy.java //strategy design pattern //future
+|   |-- Base62ShortCodeGenerator.java //strategy design pattern //future
 
 
 
@@ -64,9 +69,11 @@ common/response
 url contains URL management:
 create URL
 update URL
-delete URL
 activate/deactivate URL
 fetch user URLs
+fetch URL by id
+fetch URLs by customCode
+validations
 
 redirect contains redirect flow:
 GET /{shortCode}
@@ -78,88 +85,51 @@ shortcode contains ID/short code generation logic.
 This deserves its own package because it is an important design piece.
 
 
-Sample request response:
-GET/url
-request: blank
-response: (url/s found)
-{
-    "success": true,
-    "responseCode": "SUCCESS",
-    "respDescription": "Success",
-    "data":
-        {
-            //all urls
-        },
-    "timestamp": "2026-07-09T04:30:00"
-}
-response: (url/s not found) 
-{
-    "success": false,
-    "responseCode": "URL_NOT_FOUND",
-    "respDescription": "URL not found",
-    "data": null,
-    "timestamp": "2026-07-09T04:30:00"
-}
 
-POST/url
-request:
-{
-    "originalUrl": "",
-    "shortCode": "", //optional
-    "userId" : "Shreya"
-}
-response: (url shortened)
-{
-    "success": true,
-    "respCode": "URL_CREATED",
-    "respDescription": "Short URL created successfully",
-    "data": {
-        "id": 2026191001000000020,
-        "originalUrl": "https://leetcode.com/",
-        "shortCode": "eBwLlxcy1gB",
-        "shortUrl": "http://localhost:8080/eBwLlxcy1gB",
-        "expiryDate": "2027-07-10T02:13:43.2252869",
-        "status": "A"
-    },
-    "timeStamp": "2026-07-10T02:13:43.2413139"
-}
-response: (handled failure) 
-{
-    "success": false,
-    "responseCode": "CUSTOM_ALIAS_ALREADY_EXISTS",
-    "respDescription": "Custom alias already exists",
-    "data": null,
-    "timestamp": "2026-07-09T04:30:00"
-}
-response: (url validation failed)
-{
-    "success": false,
-    "responseCode": "VALIDATION_FAILED",
-    "respDescription": "Request validation failed",
-    "data": null,
-    "timestamp": "2026-07-09T04:30:00"
-}
-response: (db voilation)
-{
-    "success": false,
-    "responseCode": "DATA_INTEGRITY_VIOLATION",
-    "respDescription": "Request conflicts with existing data",
-    "data": null,
-    "timestamp": "2026-07-09T04:30:00"
-}
-response: (general failure)
-{
-    "success": false,
-    "responseCode": "INTERNAL_ERROR",
-    "respDescription": "Something went wrong. Please try again later.",
-    "data": null,
-    "timestamp": "2026-07-09T04:30:00"
-}
+URL API endpoints (Controller):
+GET  /v2/url
+GET  /v2/url/{id}
+GET  /v2/url/custom/{customCode}
+POST /v2/url
+PUT  /v2/url/deactivate/{id}
+PUT  /v2/url/activate/{id}
+PUT  /v2/url/{id}
 
 
 
 Custom alias already exists -> rollback + 409
+Status change not possible -> rollback + 409
 Invalid request -> rollback + 400
-URL not found -> rollback/no rollback + 404
+URL not found -> rollback + 404
 DB unavailable -> rollback + 503
 Bug/null pointer -> rollback + 500
+
+
+
+Entity : 
+
+1.Url Models
+
+TABLE : url (unique constraint = {"short_code", "status"}, {"short_code"})
+-----------------------------------------------------------------------------
+id ----------- PK
+user_id
+original_url
+short_code --- FK
+status (A / D)
+expiry_date
+click_count
+created_at
+updated_at
+
+
+TABLE : custom_url (unique constraint = {"short_code", "custom_code"})
+-----------------------------------------------------------------------------
+id ----------- PK
+custom_code
+short_code --- FK
+created_at
+updated_at
+
+
+

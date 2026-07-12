@@ -23,4 +23,10 @@ inside repository:
 public findByUserId(@Param('user') String user);
 
 
+SPRING VALIDATIONS
+@Valid in controller
+
+add below in dto fields
+@NotBlank(message = "User ID is required")
+
 

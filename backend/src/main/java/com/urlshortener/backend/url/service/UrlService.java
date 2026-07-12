@@ -9,7 +9,7 @@ import com.urlshortener.backend.url.entity.CustomUrl;
 import com.urlshortener.backend.url.entity.Url;
 import com.urlshortener.backend.url.repository.CustomUrlRepository;
 import com.urlshortener.backend.url.repository.UrlRepository;
-import com.urlshortener.backend.url.response.DtoService;
+import com.urlshortener.backend.url.dto.service.DtoService;
 import com.urlshortener.backend.url.service.validator.IUrlValidator;
 import com.urlshortener.backend.utility.IShortCodeGenerator;
 import lombok.extern.slf4j.Slf4j;
