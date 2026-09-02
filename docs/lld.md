@@ -200,6 +200,31 @@ Can modify any URL
 
 
 
+For this project, i'll use JWT-based authentication.
+
+Flow:
+POST /v2/user/register
+POST /v2/user/login -> returns JWT token
+
+Client calls:
+Authorization: Bearer <token>
+
+Backend validates token on every protected request
+
+For now, logout can be simple:
+Client deletes token
+
+Later, advanced logout:
+Store blacklisted tokens in Redis until expiry
+
+User API endpoints (Controller):
+POST /v2/user/register
+POST /v2/user/login
+POST /v2/user/logout
+GET  /v2/user/me
+
+
+
 Entity : 
 
 1.Url Models
@@ -224,6 +249,23 @@ custom_code
 short_code --- FK
 created_at
 updated_at
+
+
+
+2. User Model
+
+TABLE : users
+------------------------------------------------
+id ----------- PK
+user_id
+password_hash
+name
+email
+role
+status
+created_at
+updated_at
+
 
 
 

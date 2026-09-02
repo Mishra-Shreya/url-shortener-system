@@ -14,3 +14,29 @@ logging:
   level:
     root: INFO
     com.urlshortener.backend: DEBUG
+
+springdoc:
+  api-docs:
+    path: /v1/swagger
+  swagger-ui:
+    path: /swagger-
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"   # Note: Quotes are required for the wildcard in YAML
+
+#  # 2. Add global metadata to all metrics for easy dashboard filtering
+#  metrics:
+#    tags:
+#      application: ${spring.application.name}
+#      environment: production
+#      region: us-east-1
+
+    # 3. Calculate client SLA latency buckets (p95, p99) at the application level
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
