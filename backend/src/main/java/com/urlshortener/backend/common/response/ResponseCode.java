@@ -35,7 +35,8 @@ public enum ResponseCode {
     INVALID_PASSWORD("INVALID_PASSWORD","Invalid Password format", ResponseType.ERROR),
     INVALID_CREDENTIALS("INVALID_CREDENTIALS", "Invalid Credentials", ResponseType.ERROR),
     LOGIN_SUCCESS("LOGIN_SUCCESS", "Login Successful", ResponseType.INFO),
-    LOGOUT_SUCCESS("LOGOUT_SUCCESS", "Logout Successful", ResponseType.INFO)
+    LOGOUT_SUCCESS("LOGOUT_SUCCESS", "Logout Successful", ResponseType.INFO),
+    UNAUTHORIZED_ACCESS("UNAUTHORIZED_ACCESS", "Unauthorized access", ResponseType.ERROR)
     ;
 
     private final String code;

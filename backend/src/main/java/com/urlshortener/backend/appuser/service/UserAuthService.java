@@ -117,8 +117,9 @@ public class UserAuthService {
     }
 
     public ResponseDto logout(String userId) {
-
-        return null;
+        ResponseDto responseDto = new ResponseDto();
+        responseDto.setUserId(userId);
+        return responseDto;
     }
 
     public ResponseDto fetchUserDetails(String userId) {
