@@ -9,11 +9,11 @@ import org.springframework.stereotype.Service;
 import java.util.Optional;
 
 @Service
-public class DtoService {
+public class UrlDtoService {
 
     private final CustomUrlRepository customUrlRepository;
 
-    DtoService(CustomUrlRepository customUrlRepository){
+    UrlDtoService(CustomUrlRepository customUrlRepository){
         this.customUrlRepository = customUrlRepository;
     }
 

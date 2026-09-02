@@ -13,6 +13,7 @@ import java.util.Date;
 @Entity
 @Table(
         name = "CUSTOM_URL",
+        schema = "USS",
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "uk_custom_url_short_custom",

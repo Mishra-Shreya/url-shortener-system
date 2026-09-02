@@ -9,7 +9,7 @@ import com.urlshortener.backend.url.entity.CustomUrl;
 import com.urlshortener.backend.url.entity.Url;
 import com.urlshortener.backend.url.repository.CustomUrlRepository;
 import com.urlshortener.backend.url.repository.UrlRepository;
-import com.urlshortener.backend.url.dto.service.DtoService;
+import com.urlshortener.backend.url.dto.service.UrlDtoService;
 import com.urlshortener.backend.url.service.validator.IUrlValidator;
 import com.urlshortener.backend.utility.IShortCodeGenerator;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +32,7 @@ public class UrlService {
     private final UrlRepository urlRepository;
     private final CustomUrlRepository customUrlRepository;
     private final IShortCodeGenerator iscg;
-    private final DtoService dtoService;
+    private final UrlDtoService urlDtoService;
     private final IUrlValidator IUrlValidator;
 
     //constructor injection
@@ -40,12 +40,12 @@ public class UrlService {
             UrlRepository urlRepository,
             CustomUrlRepository customUrlRepository,
             IShortCodeGenerator iscg,
-            DtoService dtoService,
+            UrlDtoService urlDtoService,
             IUrlValidator IUrlValidator) {
         this.urlRepository = urlRepository;
         this.customUrlRepository = customUrlRepository;
         this.iscg = iscg;
-        this.dtoService = dtoService;
+        this.urlDtoService = urlDtoService;
         this.IUrlValidator = IUrlValidator;
     }
 
@@ -82,8 +82,15 @@ public class UrlService {
             customUrlRepository.save(customUrl);
         }
         log.info("Short URL created: id={}, shortCode={}, customCode={}", id, shortCode, urlRequestDto.getCustomCode());
-        UrlResponseDto resp = dtoService.populateResponseDto(url);
+        UrlResponseDto resp = urlDtoService.populateResponseDto(url);
         return resp;
+    }
+
+    public List<UrlResponseDto> fetchAll() {
+        return urlRepository.findAll()
+                .stream()
+                .map(urlDtoService::populateResponseDto)
+                .toList();
     }
 
     public List<UrlResponseDto> fetchByUser(String userId){
@@ -91,10 +98,9 @@ public class UrlService {
 
         if(urlList.isEmpty()) {
             log.warn("URL not found for userid={}", userId);
-            throw new UrlShortnerException(ResponseCode.URL_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
         log.info("Fetched {} URLs for userId={}", urlList.size(), userId);
-        return urlList.stream().map(url -> dtoService.populateResponseDto(url)).toList();
+        return urlList.stream().map(url -> urlDtoService.populateResponseDto(url)).toList();
     }
 
 
@@ -107,10 +113,14 @@ public class UrlService {
             throw new UrlShortnerException(ResponseCode.SHORTCODE_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
         log.info("Fetched {} URLs for customCode={}", urlList.size(), customShortCode);
-        return urlList.stream().map(url -> dtoService.populateResponseDto(url)).toList();
+        return urlList.stream().map(url -> urlDtoService.populateResponseDto(url)).toList();
     }
 
-    public UrlResponseDto fetchById(String id){
+    public UrlResponseDto fetchById(
+            String id,
+            String authenticatedUserId,
+            boolean isAdmin
+    ){
         //step 1 : validate id
         IUrlValidator.validateId(id);
         BigInteger bid = new BigInteger(id);
@@ -119,7 +129,10 @@ public class UrlService {
             log.warn("Id not found: id={}", id);
             throw new UrlShortnerException(ResponseCode.ID_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
-        return dtoService.populateResponseDto(url.get());
+
+        requireOwnerOrAdmin(url.get(), authenticatedUserId, isAdmin);
+
+        return urlDtoService.populateResponseDto(url.get());
     }
 
     public Optional<Url> fetchUrlDetailsByShortCode(String shortCode){
@@ -127,7 +140,11 @@ public class UrlService {
     }
 
     @Transactional
-    public List<?> deactivateById(String id){
+    public List<?> deactivateById(
+            String id,
+            String authenticatedUserId,
+            boolean isAdmin
+    ){
         //step 1 : validate id
         IUrlValidator.validateId(id);
         BigInteger bid = new BigInteger(id);
@@ -136,21 +153,32 @@ public class UrlService {
             log.warn("Id not found: id={}", id);
             throw new UrlShortnerException(ResponseCode.ID_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
+
+        requireOwnerOrAdmin(
+                url.get(),
+                authenticatedUserId,
+                isAdmin
+        );
+
         log.info("Before: status={}", url.get().getStatus());
         if(url.get().getStatus().equals("D")){
             log.warn("Short url already deactivated: status={}", url.get().getStatus());
-            return List.of(ResponseCode.SHORTURL_ALREADY_DEACTIVATED, dtoService.populateResponseDto(url.get()));
+            return List.of(ResponseCode.SHORTURL_ALREADY_DEACTIVATED, urlDtoService.populateResponseDto(url.get()));
         }
         IUrlValidator.validateStatusChangePossible("D", bid);
         //update status
         url.get().setStatus("D");
         log.info("Short url deactivated: status={}", url.get().getStatus());
-        return List.of(ResponseCode.SHORTURL_DEACTIVATED, dtoService.populateResponseDto(url.get()));
+        return List.of(ResponseCode.SHORTURL_DEACTIVATED, urlDtoService.populateResponseDto(url.get()));
     }
 
 
     @Transactional
-    public List<?> activateById(String id){
+    public List<?> activateById(
+            String id,
+            String authenticatedUserId,
+            boolean isAdmin
+    ){
         //step 1 : validate id
         IUrlValidator.validateId(id);
         BigInteger bid = new BigInteger(id);
@@ -159,30 +187,47 @@ public class UrlService {
             log.warn("Id not found: id={}", id);
             throw new UrlShortnerException(ResponseCode.SHORTCODE_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
+
+        requireOwnerOrAdmin(
+                url.get(),
+                authenticatedUserId,
+                isAdmin
+        );
+
         log.info("Before: status={}", url.get().getStatus());
         if(url.get().getStatus().equals("A")){
             log.warn("Short url deactivated: status={}", url.get().getStatus());
-            return List.of(ResponseCode.SHORTURL_ALREADY_ACTIVE, dtoService.populateResponseDto(url.get()));
+            return List.of(ResponseCode.SHORTURL_ALREADY_ACTIVE, urlDtoService.populateResponseDto(url.get()));
         }
         IUrlValidator.validateStatusChangePossible("A", bid);
         //update status
         url.get().setStatus("A");
         log.info("Short url activated: status={}", url.get().getStatus());
-        return List.of(ResponseCode.SHORTURL_ACTIVATED, dtoService.populateResponseDto(url.get()));
+        return List.of(ResponseCode.SHORTURL_ACTIVATED, urlDtoService.populateResponseDto(url.get()));
     }
 
     @Transactional
-    public UrlResponseDto update(UpdateUrlRequestDto urlRequestDto, String id){
+    public UrlResponseDto update(
+            UpdateUrlRequestDto urlRequestDto,
+            String id,
+            String authenticatedUserId,
+            boolean isAdmin
+    ){
 
         IUrlValidator.validateId(id);
         BigInteger bid = new BigInteger(id);
-        UrlResponseDto updated = updateById(urlRequestDto, bid);
+        UrlResponseDto updated = updateById(urlRequestDto, bid, authenticatedUserId, isAdmin);
 
         return updated;
     }
 
 
-    public UrlResponseDto updateById(UpdateUrlRequestDto urlRequestDto, BigInteger id){
+    public UrlResponseDto updateById(
+            UpdateUrlRequestDto urlRequestDto,
+            BigInteger id,
+            String authenticatedUserId,
+            boolean isAdmin
+    ){
         //step 1 : validate id
         IUrlValidator.validateError(urlRequestDto);
 
@@ -195,6 +240,13 @@ public class UrlService {
         }
 
         Url url = optionalUrl.get();
+
+        requireOwnerOrAdmin(
+                url,
+                authenticatedUserId,
+                isAdmin
+        );
+
         if(urlRequestDto.getOriginalUrl()!=null) url.setOriginalUrl(urlRequestDto.getOriginalUrl());
         if(urlRequestDto.getStatus()!=null) {
             IUrlValidator.validateStatusChangePossible(urlRequestDto.getStatus(), id);
@@ -223,8 +275,24 @@ public class UrlService {
         url.setUpdatedAt(now);
 
         log.info("Short URL updated: id={}", id);
-        UrlResponseDto resp = dtoService.populateResponseDto(url);
+        UrlResponseDto resp = urlDtoService.populateResponseDto(url);
         return resp;
+    }
+
+
+    private void requireOwnerOrAdmin(
+            Url url,
+            String authenticatedUserId,
+            boolean isAdmin
+    ) {
+        boolean isOwner = url.getUserId().equals(authenticatedUserId);
+
+        if(!isAdmin && !isOwner){
+            throw new UrlShortnerException(
+                    ResponseCode.UNAUTHORIZED_ACCESS,
+                    HttpStatus.FORBIDDEN
+            );
+        }
     }
 
 }

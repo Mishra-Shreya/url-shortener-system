@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -27,8 +28,8 @@ public class UrlController {
     }
 
     @GetMapping("/url")
-    public ResponseEntity<?> fetchAll(@RequestParam String userId){
-        List<UrlResponseDto> urlList = urlService.fetchByUser(userId);
+    public ResponseEntity<?> fetchAll(Authentication authentication){
+        List<UrlResponseDto> urlList = urlService.fetchAll();
 
         String baseUrl = ServletUriComponentsBuilder
                             .fromCurrentContextPath()
@@ -46,17 +47,40 @@ public class UrlController {
                 .body(ApiResponseBuilder.success(ResponseCode.RECORDS_FETCHED, urlList));
     }
 
-    @GetMapping("/url/{id}")
-    public ResponseEntity<?> fetchById(@PathVariable String id){
+    @GetMapping("/url/me")
+    public ResponseEntity<?> fetchMyUrls(Authentication authentication){
 
-        UrlResponseDto data = urlService.fetchById(id);
+        String userId = authentication.getName();
+
+        List<UrlResponseDto> urlList = urlService.fetchByUser(userId);
+
+        String baseUrl = ServletUriComponentsBuilder
+                .fromCurrentContextPath()
+                .build()
+                .toUriString();
+
+        for (UrlResponseDto urlResponseDto : urlList) {
+            if (urlResponseDto.getCustomCode() != null)
+                urlResponseDto.setShortUrl(baseUrl + "/" + urlResponseDto.getCustomCode());
+            else urlResponseDto.setShortUrl(baseUrl + "/" + urlResponseDto.getShortCode());
+        }
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponseBuilder.success(ResponseCode.RECORDS_FETCHED, urlList));
+    }
+
+    @GetMapping("/url/{id}")
+    public ResponseEntity<?> fetchById(@PathVariable String id, Authentication authentication){
+
+        UrlResponseDto data = urlService.fetchById(id, authentication.getName(), isAdmin(authentication));
         ResponseCode responseCode = ResponseCode.SUCCESS;
         return getResponseEntity(responseCode, data);
 
     }
 
     @GetMapping("/url/custom/{customCode}")
-    public ResponseEntity<?> fetchByCustomCode(@PathVariable String customCode){
+    public ResponseEntity<?> fetchByCustomCode(@PathVariable String customCode, Authentication authentication){
 
         List<UrlResponseDto> urlList = urlService.fetchByCustomCode(customCode);
 
@@ -78,8 +102,11 @@ public class UrlController {
     }
 
     @PostMapping("/url")
-    public ResponseEntity<?> shortenUrl(@Valid @RequestBody UrlRequestDto urlRequestDto){
-
+    public ResponseEntity<?> shortenUrl(
+            @Valid @RequestBody UrlRequestDto urlRequestDto,
+            Authentication authentication
+    ){
+        urlRequestDto.setUserId(authentication.getName());
         UrlResponseDto data = urlService.shortenUrl(urlRequestDto);
         ResponseCode responseCode = ResponseCode.URL_CREATED;
         return getResponseEntity(responseCode, data);
@@ -87,9 +114,9 @@ public class UrlController {
     }
 
     @PutMapping("/url/deactivate/{id}")
-    public ResponseEntity<?> deactivateUrl(@PathVariable String id){
+    public ResponseEntity<?> deactivateUrl(@PathVariable String id, Authentication authentication){
 
-        List<?> resp = urlService.deactivateById(id);
+        List<?> resp = urlService.deactivateById(id, authentication.getName(), isAdmin(authentication));
         ResponseCode responseCode = (ResponseCode) resp.get(0);
         UrlResponseDto data = (UrlResponseDto) resp.get(1);
         return getResponseEntity(responseCode, data);
@@ -97,9 +124,9 @@ public class UrlController {
     }
 
     @PutMapping("/url/activate/{id}")
-    public ResponseEntity<?> activateUrl(@PathVariable String id){
+    public ResponseEntity<?> activateUrl(@PathVariable String id, Authentication authentication){
 
-        List<?> resp = urlService.activateById(id);
+        List<?> resp = urlService.activateById(id, authentication.getName(), isAdmin(authentication));
         ResponseCode responseCode = (ResponseCode) resp.get(0);
         UrlResponseDto data = (UrlResponseDto) resp.get(1);
         return getResponseEntity(responseCode, data);
@@ -107,9 +134,9 @@ public class UrlController {
     }
 
     @PutMapping("/url/{id}")
-    public ResponseEntity<?> updateUrl(@Valid @RequestBody UpdateUrlRequestDto urlRequestDto, @PathVariable String id){
+    public ResponseEntity<?> updateUrl(@Valid @RequestBody UpdateUrlRequestDto urlRequestDto, @PathVariable String id, Authentication authentication){
 
-        UrlResponseDto updated = urlService.update(urlRequestDto, id);
+        UrlResponseDto updated = urlService.update(urlRequestDto, id, authentication.getName(), isAdmin(authentication));
         ResponseCode responseCode = ResponseCode.URL_UPDATED;
         return getResponseEntity(responseCode, updated);
 
@@ -132,6 +159,14 @@ public class UrlController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponseBuilder.success(responseCode, data));
+    }
+
+    private boolean isAdmin(Authentication authentication){
+        return authentication.getAuthorities()
+                .stream()
+                .anyMatch(authority ->
+                        authority.getAuthority().equals("ROLE_ADMIN")
+                );
     }
 
 }

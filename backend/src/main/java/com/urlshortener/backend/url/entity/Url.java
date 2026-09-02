@@ -15,6 +15,7 @@ import java.util.List;
 @Entity
 @Table(
         name = "URL",
+        schema = "USS",
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "uk_short_status",
