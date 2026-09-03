@@ -10,7 +10,10 @@ import com.urlshortener.backend.common.response.ResponseCode;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/v2")
@@ -59,8 +62,17 @@ public class UserAuthController {
     }
 
     @GetMapping("/user")
-    public ResponseEntity<?> register(@RequestParam String userId){
-        ResponseDto data = userAuthService.fetchUserDetails(userId);
+    public ResponseEntity<?> fetchAllUserDetails(){
+        List<ResponseDto> data = userAuthService.fetchAllUserDetails();
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponseBuilder.success(ResponseCode.RECORDS_FETCHED, data));
+    }
+
+    @GetMapping("/user/me")
+    public ResponseEntity<?> fetchMyDetails(Authentication authentication){
+        ResponseDto data = userAuthService.fetchMyDetails(authentication.getName());
 
         return ResponseEntity
                 .status(HttpStatus.OK)

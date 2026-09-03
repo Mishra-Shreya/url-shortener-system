@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -56,7 +57,8 @@ public class UserAuthService {
         user.setUserId(registerRequestDto.getUserId());
         user.setName(registerRequestDto.getName());
         user.setEmail(registerRequestDto.getEmail());
-        user.setRole(registerRequestDto.getRole().toUpperCase());
+//        user.setRole(registerRequestDto.getRole().toUpperCase());
+        user.setRole("USER");
 
         String password = registerRequestDto.getPassword();
         String passwordHash = passwordEncoder.encode(password);
@@ -122,10 +124,21 @@ public class UserAuthService {
         return responseDto;
     }
 
-    public ResponseDto fetchUserDetails(String userId) {
+    public ResponseDto fetchMyDetails(String userId) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new UrlShortnerException(
+                        ResponseCode.ID_NOT_FOUND,
+                        HttpStatus.NOT_FOUND
+                ));
 
-        return null;
+        return userDtoService.populateRegisterResponseDto(user);
     }
 
 
+    public List<ResponseDto> fetchAllUserDetails() {
+        return userRepository.findAll()
+                .stream()
+                .map(userDtoService::populateRegisterResponseDto)
+                .toList();
+    }
 }
