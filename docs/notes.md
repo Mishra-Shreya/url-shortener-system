@@ -30,3 +30,48 @@ add below in dto fields
 @NotBlank(message = "User ID is required")
 
 
+
+
+Spring Security:
+
+identity + login + password hashing + tokens + filters + authorization rules
+
+First: Concepts
+
+Authentication means: Who are you?
+Example:
+email + password -> verify user exists -> password matches -> login successful
+
+Authorization means:
+What are you allowed to do?
+Example:
+    User A can update User A's URLs
+    User A cannot update User B's URLs
+    Admin can see all URLs
+
+Login means user proves identity.
+Logout depends on auth style:
+    session-based logout: server destroys session
+    JWT logout: client deletes token, or server blacklists token if you want stricter logout
+
+
+Spring Security is the framework that intercepts requests before they reach your controller.
+Flow:
+    HTTP request
+        |
+    Spring Security Filter Chain
+        |
+    Check token/session
+        |
+    Set authenticated user in SecurityContext
+        |
+    Controller runs
+
+What Auth Style Should You Use?
+For this project, using JWT-based authentication.
+Bcz?
+    Common in modern REST APIs
+    Works well with frontend later
+    Stateless backend
+    Good for interviews
+

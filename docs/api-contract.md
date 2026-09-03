@@ -308,4 +308,36 @@ response:
 }
 //similarly other validations 
 
+-----------------------------------------------------------------------------------
 
+
+II] User endpoints:
+
+1. POST /v2/user/register
+
+request: 
+{
+    "email": "shreya@gmail.com",
+    "userId": "shreya",
+    "password": "pass@123",
+    "name": "Shreya Mishra",
+    "role": "user"
+}
+response:
+{
+    "success": true,
+    "respCode": "USER_CREATED",
+    "respDescription": "User created",
+    "data": {
+        "userId": "shreya",
+        "name": "Shreya Mishra",
+        "email": "shreya@gmail.com",
+        "role": "user",
+        "status": "A"
+    },
+    "timestamp": 
+}
+
+2. POST /v2/user/login
+3. POST /v2/user/logout
+4. GET  /v2/user/me
