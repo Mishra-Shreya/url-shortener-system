@@ -33,6 +33,17 @@ public class SecurityConfig {
             "/swagger-slynk/**"
     };
 
+    private static final String[] ADMIN_ONLY_ENDPOINTS = {
+            "/v2/user",
+            "/v2/url",
+            "/v2/url/custom/**"
+    };
+
+    private static final String[] USER_ADMIN_ENDPOINTS = {
+            "/v2/user/me",
+            "/v2/url/me"
+    };
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -45,13 +56,13 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/v2/user/register", "/v2/user/login/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/{shortCode}").permitAll()
                         .requestMatchers(SWAGGER_WHITELIST).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/v2/url").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/v2/url/me").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/v2/url/custom/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, ADMIN_ONLY_ENDPOINTS).hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, USER_ADMIN_ENDPOINTS).hasAnyRole("USER", "ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(
