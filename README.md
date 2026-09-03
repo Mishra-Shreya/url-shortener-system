@@ -1,4 +1,4 @@
-# URL Shortener System
+# Shrink - URL Shortener System
 
 A backend URL-shortener application built with Spring Boot. It supports custom aliases, URL activation/deactivation, redirects, JWT authentication, role-based authorization, and resource ownership checks.
 
